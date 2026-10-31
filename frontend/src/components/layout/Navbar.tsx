@@ -9,15 +9,17 @@ import {
   Shield,
   Briefcase,
   User as UserIcon,
+  Menu,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { UserRole } from '../../types';
 
 interface NavbarProps {
   onOpenSearch: () => void;
+  onToggleMobileMenu?: () => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ onOpenSearch }) => {
+export const Navbar: React.FC<NavbarProps> = ({ onOpenSearch, onToggleMobileMenu }) => {
   const { user, switchPersona, logout } = useAuth();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -59,20 +61,28 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenSearch }) => {
   };
 
   return (
-    <header className="sticky top-0 z-20 flex h-16 w-full items-center justify-between border-b border-bordergrey bg-white/95 px-6 backdrop-blur-md">
-      {/* Breadcrumbs */}
-      <div className="flex items-center gap-3">
-        <span className="text-xs font-semibold tracking-wider uppercase text-slategrey">
+    <header className="sticky top-0 z-20 flex h-16 w-full items-center justify-between border-b border-bordergrey bg-white/95 px-4 md:px-6 backdrop-blur-md">
+      {/* Mobile Menu & Breadcrumbs */}
+      <div className="flex items-center gap-2 sm:gap-3">
+        <button
+          type="button"
+          onClick={onToggleMobileMenu}
+          aria-label="Toggle navigation menu"
+          className="p-1.5 rounded-lg text-slategrey hover:text-obsidian hover:bg-ivory md:hidden"
+        >
+          <Menu className="h-5 w-5" />
+        </button>
+        <span className="text-xs font-semibold tracking-wider uppercase text-slategrey hidden sm:inline">
           BRIGHTLOOP
         </span>
-        <span className="text-bordergrey-dark">/</span>
-        <h1 className="text-sm font-semibold text-obsidian tracking-tight">
+        <span className="text-bordergrey-dark hidden sm:inline">/</span>
+        <h1 className="text-sm font-semibold text-obsidian tracking-tight truncate max-w-[140px] sm:max-w-none">
           {getBreadcrumb()}
         </h1>
       </div>
 
       {/* Global Search Bar */}
-      <div className="flex-1 max-w-md mx-6">
+      <div className="hidden md:block flex-1 max-w-md mx-6">
         <button
           onClick={onOpenSearch}
           className="flex w-full items-center justify-between rounded-lg border border-bordergrey bg-ivory/50 px-3 py-1.5 text-xs text-slategrey hover:border-forest/40 hover:bg-white transition-all shadow-subtle"
@@ -88,9 +98,18 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenSearch }) => {
       </div>
 
       {/* Right Controls */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 sm:gap-3">
+        {/* Mobile Search Button */}
+        <button
+          onClick={onOpenSearch}
+          aria-label="Search"
+          className="p-2 rounded-lg text-slategrey hover:text-obsidian hover:bg-ivory md:hidden"
+        >
+          <Search className="h-4 w-4" />
+        </button>
+
         {/* Role Persona Switcher for Hackathon Judges */}
-        <div className="hidden sm:flex items-center rounded-lg border border-bordergrey bg-ivory p-0.5 text-xs">
+        <div className="hidden lg:flex items-center rounded-lg border border-bordergrey bg-ivory p-0.5 text-xs">
           <span className="px-2 py-1 text-[10px] font-bold text-slategrey uppercase tracking-wider">
             Persona:
           </span>

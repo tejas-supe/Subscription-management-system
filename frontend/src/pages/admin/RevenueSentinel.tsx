@@ -13,6 +13,7 @@ import {
   TrendingUp,
   FileCheck,
   Download,
+  AlertCircle,
 } from 'lucide-react';
 import { analyticsService } from '../../services/analyticsService';
 import { subscriptionService } from '../../services/subscriptionService';
@@ -30,10 +31,12 @@ export const RevenueSentinel: React.FC = () => {
   const [renewalData, setRenewalData] = useState<any>(null);
   const [reconciliationData, setReconciliationData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
 
   const loadAllIntelligence = async () => {
     try {
       setLoading(true);
+      setLoadError('');
       const [hRes, lRes, rRes, recRes] = await Promise.all([
         analyticsService.getHealthMonitor(),
         analyticsService.getRevenueSentinel(),
@@ -45,8 +48,9 @@ export const RevenueSentinel: React.FC = () => {
       if (lRes.data.success) setLeakageData(lRes.data);
       if (rRes.data.success) setRenewalData(rRes.data);
       if (recRes.data.success) setReconciliationData(recRes.data);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Revenue Sentinel load error:', err);
+      setLoadError(err.response?.data?.message || err.message || 'Unable to connect to Revenue Sentinel intelligence engine.');
     } finally {
       setLoading(false);
     }
@@ -70,6 +74,21 @@ export const RevenueSentinel: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {loadError && (
+        <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-xs flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+            <span>{loadError}</span>
+          </div>
+          <button
+            onClick={loadAllIntelligence}
+            className="px-3 py-1 bg-white border border-rose-300 rounded-md font-semibold hover:bg-rose-100 text-rose-900 transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-bordergrey">
         <div>
           <div className="flex items-center gap-2">

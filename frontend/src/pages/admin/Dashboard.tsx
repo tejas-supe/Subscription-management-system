@@ -38,10 +38,12 @@ export const Dashboard: React.FC = () => {
   const [dateRange, setDateRange] = useState<'7d' | '30d' | '90d' | '1y'>('30d');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [loadError, setLoadError] = useState('');
   const navigate = useNavigate();
 
   const loadDashboardData = async () => {
     try {
+      setLoadError('');
       const [kpiRes, trendRes, planRes, payRes, renRes, healthRes, leakRes] = await Promise.all([
         analyticsService.getKpis(dateRange),
         analyticsService.getMrrTrend(),
@@ -59,8 +61,9 @@ export const Dashboard: React.FC = () => {
       if (renRes.data.success) setUpcomingRenewals(renRes.data.window7Days.slice(0, 4));
       if (healthRes.data.success) setHealthSummary(healthRes.data.summary);
       if (leakRes.data.success) setLeakageSummary(leakRes.data.summary);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Dashboard load failed:', err);
+      setLoadError(err.response?.data?.message || err.message || 'Unable to connect to financial analytics service. Please verify backend is active.');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -82,6 +85,22 @@ export const Dashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Error Alert */}
+      {loadError && (
+        <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-xs flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+            <span>{loadError}</span>
+          </div>
+          <button
+            onClick={() => { setLoading(true); loadDashboardData(); }}
+            className="px-3 py-1 bg-white border border-rose-300 rounded-md font-semibold hover:bg-rose-100 text-rose-900 transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
       {/* Top Banner / Actions Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-bordergrey">
         <div>

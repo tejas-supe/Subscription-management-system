@@ -4,8 +4,8 @@ import { Eye, EyeOff, Lock, Mail, ArrowRight, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 export const Login: React.FC = () => {
-  const [email, setEmail] = useState('admin@brightloop.io');
-  const [password, setPassword] = useState('Brightloop@2025');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -18,15 +18,17 @@ export const Login: React.FC = () => {
     setLoading(true);
 
     try {
-      const success = await login(email, password);
-      if (success) {
-        if (email.includes('vertex') || email.includes('customer')) {
+      const res = await login(email, password);
+      if (res.success && res.user) {
+        // Dynamic redirection strictly based on backend-authenticated role
+        if (res.user.role === 'CUSTOMER') {
           navigate('/customer/dashboard');
         } else {
+          // ADMIN or STAFF
           navigate('/admin/dashboard');
         }
       } else {
-        setError('Invalid enterprise email credentials or suspended role.');
+        setError(res.message || 'Invalid enterprise credentials or inactive account.');
       }
     } catch (err: any) {
       setError(err.message || 'Authentication service unreachable.');

@@ -65,17 +65,17 @@ export const AppRoutes: React.FC = () => {
         <Route index element={<Navigate to="/admin/dashboard" replace />} />
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="customers" element={<Customers />} />
-        <Route path="products" element={<Products />} />
-        <Route path="plans" element={<Plans />} />
+        <Route path="products" element={<ProtectedRoute allowedRoles={['ADMIN']}><Products /></ProtectedRoute>} />
+        <Route path="plans" element={<ProtectedRoute allowedRoles={['ADMIN']}><Plans /></ProtectedRoute>} />
         <Route path="quotations" element={<Quotations />} />
         <Route path="subscriptions" element={<Subscriptions />} />
         <Route path="invoices" element={<Invoices />} />
         <Route path="payments" element={<Payments />} />
-        <Route path="discounts" element={<Discounts />} />
-        <Route path="analytics" element={<Analytics />} />
-        <Route path="revenue-sentinel" element={<RevenueSentinel />} />
-        <Route path="team" element={<Team />} />
-        <Route path="audit-logs" element={<AuditLogs />} />
+        <Route path="discounts" element={<ProtectedRoute allowedRoles={['ADMIN']}><Discounts /></ProtectedRoute>} />
+        <Route path="analytics" element={<ProtectedRoute allowedRoles={['ADMIN']}><Analytics /></ProtectedRoute>} />
+        <Route path="revenue-sentinel" element={<ProtectedRoute allowedRoles={['ADMIN']}><RevenueSentinel /></ProtectedRoute>} />
+        <Route path="team" element={<ProtectedRoute allowedRoles={['ADMIN']}><Team /></ProtectedRoute>} />
+        <Route path="audit-logs" element={<ProtectedRoute allowedRoles={['ADMIN']}><AuditLogs /></ProtectedRoute>} />
         <Route path="settings" element={<Settings />} />
       </Route>
 

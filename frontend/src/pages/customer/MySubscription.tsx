@@ -18,19 +18,24 @@ export const MySubscription: React.FC = () => {
   const [cancelReason, setCancelReason] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [statusMsg, setStatusMsg] = useState('');
+  const [loadError, setLoadError] = useState('');
 
   const load = async () => {
     try {
       setLoading(true);
+      setLoadError('');
       const res = await portalService.getDashboard();
       if (res.data.success) {
         setData(res.data);
         if (res.data.availablePlans?.length > 0 && !selectedPlanId) {
           setSelectedPlanId(res.data.availablePlans[0]._id);
         }
+      } else {
+        setLoadError(res.data.message || 'Failed to load subscription details.');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      setLoadError(err.response?.data?.message || err.message || 'Unable to connect to subscription service. Please retry.');
     } finally {
       setLoading(false);
     }
@@ -76,6 +81,18 @@ export const MySubscription: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {loadError && (
+        <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-xs flex items-center justify-between gap-3">
+          <span>{loadError}</span>
+          <button
+            onClick={load}
+            className="px-3 py-1 bg-white border border-rose-300 rounded-md font-semibold hover:bg-rose-100 text-rose-900 transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
       <div className="pb-2 border-b border-bordergrey">
         <h2 className="text-xl font-bold text-obsidian tracking-tight">My Subscription Agreement</h2>
         <p className="text-xs text-slategrey mt-0.5">

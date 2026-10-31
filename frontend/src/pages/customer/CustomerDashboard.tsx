@@ -21,22 +21,28 @@ export const CustomerDashboard: React.FC = () => {
   const { user } = useAuth();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        setLoading(true);
-        const res = await portalService.getDashboard();
-        if (res.data.success) {
-          setData(res.data);
-        }
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
+  const load = async () => {
+    try {
+      setLoading(true);
+      setLoadError('');
+      const res = await portalService.getDashboard();
+      if (res.data.success) {
+        setData(res.data);
+      } else {
+        setLoadError(res.data.message || 'Unable to fetch portal dashboard details.');
       }
-    };
+    } catch (err: any) {
+      console.error(err);
+      setLoadError(err.response?.data?.message || err.message || 'Failed to connect to portal service.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     load();
   }, []);
 
@@ -49,6 +55,17 @@ export const CustomerDashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {loadError && (
+        <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-xs flex items-center justify-between gap-3">
+          <span>{loadError}</span>
+          <button
+            onClick={load}
+            className="px-3 py-1 bg-white border border-rose-300 rounded-md font-semibold hover:bg-rose-100 text-rose-900 transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      )}
       {/* Welcome Banner */}
       <div className="rounded-2xl bg-obsidian text-white p-6 shadow-card border border-obsidian-surface flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>

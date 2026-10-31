@@ -36,16 +36,22 @@ export const MyInvoices: React.FC = () => {
   const [submittingPayment, setSubmittingPayment] = useState(false);
   const [paySuccessMsg, setPaySuccessMsg] = useState('');
 
+  const [loadError, setLoadError] = useState('');
+
   const loadData = async () => {
     try {
       setLoading(true);
+      setLoadError('');
       const res = await portalService.getDashboard();
       if (res.data.success) {
         setInvoices(res.data.invoices || []);
         setCustomer(res.data.customer || null);
+      } else {
+        setLoadError(res.data.message || 'Failed to retrieve tax statements');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      setLoadError(err.response?.data?.message || err.message || 'Unable to connect to billing server. Please check your connection.');
     } finally {
       setLoading(false);
     }
@@ -66,21 +72,25 @@ export const MyInvoices: React.FC = () => {
     if (!payingInvoice) return;
     setSubmittingPayment(true);
     try {
-      await paymentService.create({
-        customerId: customer._id,
+      // Clearly call the simulated test gateway endpoint
+      const res = await paymentService.simulateGateway({
         invoiceId: payingInvoice._id,
-        amountInPaise: payingInvoice.balanceDueInPaise || payingInvoice.totalAmountInPaise,
-        paymentMethod: payMethod,
-        transactionReference: `PAY-SELF-${Date.now().toString().slice(-6)}`,
-        status: 'Success'
+        method: payMethod,
+        simulateSuccess: true,
+        notes: `Customer portal self-service test settlement (${payMethod})`
       });
-      setPaySuccessMsg('Payment processed successfully! Your receipt is generated.');
-      setTimeout(() => {
-        setPayModalOpen(false);
-        loadData();
-      }, 1500);
+
+      if (res.data && res.data.success) {
+        setPaySuccessMsg(`[SIMULATED GATEWAY] Settlement of ${formatINR(payingInvoice.balanceDueInPaise || payingInvoice.totalAmountInPaise)} confirmed by backend test gateway.`);
+        setTimeout(() => {
+          setPayModalOpen(false);
+          loadData();
+        }, 1600);
+      } else {
+        alert(res.data?.message || 'Payment simulation declined by backend.');
+      }
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Payment processing failed');
+      alert(err.response?.data?.message || 'Payment simulation failed. Ensure backend service is reachable.');
     } finally {
       setSubmittingPayment(false);
     }
@@ -102,6 +112,22 @@ export const MyInvoices: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* API Error State Alert */}
+      {loadError && (
+        <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-xs flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+            <span>{loadError}</span>
+          </div>
+          <button
+            onClick={loadData}
+            className="px-3 py-1 bg-white border border-rose-300 rounded-md font-semibold hover:bg-rose-100 text-rose-900 transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
@@ -130,7 +156,7 @@ export const MyInvoices: React.FC = () => {
           <p className="text-2xl font-bold font-mono text-emerald-600">{formatINR(totalPaid)}</p>
           <div className="flex items-center gap-1.5 text-xs text-emerald-700 mt-1">
             <CheckCircle className="w-3.5 h-3.5" />
-            Verified settled against banking rail
+            Reconciled ledger payments
           </div>
         </div>
         <div className="bg-white p-5 rounded-xl border border-borderGrey/70 shadow-card">
@@ -398,7 +424,7 @@ export const MyInvoices: React.FC = () => {
       <Modal
         isOpen={payModalOpen}
         onClose={() => setPayModalOpen(false)}
-        title="Settle Invoice Online"
+        title="Execute Payment (Gateway Simulator)"
         size="md"
       >
         {payingInvoice && (
@@ -410,13 +436,24 @@ export const MyInvoices: React.FC = () => {
               </div>
             )}
 
+            {/* Sandbox Simulation Notice */}
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2.5 text-xs text-amber-900">
+              <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+              <div className="leading-relaxed">
+                <span className="font-bold">Sandbox Environment Simulator</span>
+                <p className="text-[11px] text-amber-800 mt-0.5">
+                  This transaction is handled via the backend's simulated gateway endpoint (<code>/api/payments/simulate-gateway</code>). No real credit card or UPI transactions are submitted to live payment networks.
+                </p>
+              </div>
+            </div>
+
             <div className="p-4 bg-warmIvory/60 rounded-xl border border-borderGrey/70 space-y-2">
               <div className="flex justify-between text-xs">
                 <span className="text-slateGrey">Invoice Number:</span>
                 <span className="font-mono font-bold text-obsidian">{payingInvoice.invoiceNumber}</span>
               </div>
               <div className="flex justify-between text-xs">
-                <span className="text-slateGrey">Payable Amount:</span>
+                <span className="text-slateGrey">Simulation Amount:</span>
                 <span className="font-mono font-bold text-lg text-deepForest">
                   {formatINR(payingInvoice.balanceDueInPaise || payingInvoice.totalAmountInPaise)}
                 </span>
@@ -425,7 +462,7 @@ export const MyInvoices: React.FC = () => {
 
             <div>
               <label className="block text-xs font-semibold text-slateGrey mb-2 uppercase tracking-wider">
-                Select Payment Rail
+                Select Simulation Payment Rail
               </label>
               <div className="grid grid-cols-3 gap-2">
                 {(['UPI', 'Card', 'Bank Transfer'] as const).map((method) => (
@@ -445,15 +482,6 @@ export const MyInvoices: React.FC = () => {
               </div>
             </div>
 
-            <div className="p-3 bg-slate-50 border border-borderGrey/60 rounded-lg flex items-start gap-2.5">
-              <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
-              <div className="text-[11px] text-slateGrey leading-relaxed">
-                <span className="font-semibold text-obsidian">Bank-Grade 256-Bit SSL Encryption</span>
-                <br />
-                Instant automated reconciliation via RBI NPCI & Razorpay payment gateway rails.
-              </div>
-            </div>
-
             <div className="flex items-center justify-end gap-2 pt-3 border-t border-borderGrey">
               <Button
                 variant="ghost"
@@ -468,7 +496,7 @@ export const MyInvoices: React.FC = () => {
                 type="submit"
                 loading={submittingPayment}
               >
-                Authorize & Pay {formatINR(payingInvoice.balanceDueInPaise || payingInvoice.totalAmountInPaise)}
+                Execute Test Payment {formatINR(payingInvoice.balanceDueInPaise || payingInvoice.totalAmountInPaise)}
               </Button>
             </div>
           </form>

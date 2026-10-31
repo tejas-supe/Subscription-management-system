@@ -14,6 +14,7 @@ import {
   CheckCircle2,
   ExternalLink,
   Zap,
+  AlertCircle,
 } from 'lucide-react';
 import { subscriptionService } from '../../services/subscriptionService';
 import { customerService } from '../../services/customerService';
@@ -52,9 +53,12 @@ export const Subscriptions: React.FC = () => {
     trialDays: 14
   });
 
+  const [loadError, setLoadError] = useState('');
+
   const loadData = async () => {
     try {
       setLoading(true);
+      setLoadError('');
       const [sRes, cRes, pRes] = await Promise.all([
         subscriptionService.list({ status: statusFilter !== 'All' ? statusFilter : undefined }),
         customerService.list(),
@@ -75,8 +79,9 @@ export const Subscriptions: React.FC = () => {
           setNewPlanId(pRes.data.plans[0]._id);
         }
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      setLoadError(err.response?.data?.message || err.message || 'Unable to retrieve subscriptions. Check connection to backend.');
     } finally {
       setLoading(false);
     }
@@ -182,6 +187,21 @@ export const Subscriptions: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {loadError && (
+        <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-xs flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+            <span>{loadError}</span>
+          </div>
+          <button
+            onClick={loadData}
+            className="px-3 py-1 bg-white border border-rose-300 rounded-md font-semibold hover:bg-rose-100 text-rose-900 transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-bordergrey">
         <div>
           <h2 className="text-xl font-bold text-obsidian tracking-tight">Subscription Lifecycle</h2>

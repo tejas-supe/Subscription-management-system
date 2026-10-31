@@ -15,7 +15,8 @@ import {
   Edit,
   ExternalLink,
   MapPin,
-  FileText
+  FileText,
+  AlertCircle
 } from 'lucide-react';
 import { customerService } from '../../services/customerService';
 import { Customer } from '../../types';
@@ -45,6 +46,7 @@ export const Customers: React.FC = () => {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [loadError, setLoadError] = useState('');
 
   // Form states
   const [formData, setFormData] = useState({
@@ -64,12 +66,16 @@ export const Customers: React.FC = () => {
   const loadCustomers = async () => {
     try {
       setLoading(true);
+      setLoadError('');
       const res = await customerService.list({ search, status: statusFilter });
       if (res.data.success) {
         setCustomers(res.data.customers);
+      } else {
+        setLoadError(res.data.message || 'Failed to retrieve customer accounts.');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to load customers:', err);
+      setLoadError(err.response?.data?.message || err.message || 'Unable to connect to customer service. Please retry.');
     } finally {
       setLoading(false);
     }
@@ -227,6 +233,22 @@ export const Customers: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Error Alert */}
+      {loadError && (
+        <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-xs flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+            <span>{loadError}</span>
+          </div>
+          <button
+            onClick={() => loadCustomers()}
+            className="px-3 py-1 bg-white border border-rose-300 rounded-md font-semibold hover:bg-rose-100 text-rose-900 transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
       {/* Header & Controls */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-bordergrey">
         <div>

@@ -47,9 +47,12 @@ export const MyProfile: React.FC = () => {
         setState(c.billingAddress?.state || '');
         setPostalCode(c.billingAddress?.postalCode || '');
         setCountry(c.billingAddress?.country || 'India');
+      } else {
+        setErrorMsg(res.data.message || 'Unable to retrieve organization profile.');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      setErrorMsg(err.response?.data?.message || err.message || 'Failed to connect to profile service.');
     } finally {
       setLoading(false);
     }

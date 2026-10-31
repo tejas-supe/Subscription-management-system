@@ -6,7 +6,7 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<{ success: boolean; user?: User; message?: string }>;
   register: (name: string, email: string, password: string, role?: UserRole) => Promise<boolean>;
   logout: () => void;
   switchPersona: (role: UserRole) => Promise<void>;
@@ -22,7 +22,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [token, setToken] = useState<string | null>(localStorage.getItem('brightloop_token'));
   const [loading, setLoading] = useState<boolean>(true);
 
-  // Initialize auth state
+  // Initialize auth state: only authenticate if a valid existing token is present
   useEffect(() => {
     const initAuth = async () => {
       const storedToken = localStorage.getItem('brightloop_token');
@@ -31,48 +31,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const res = await authService.me();
           if (res.data.success && res.data.user) {
             setUser(res.data.user);
+            setToken(storedToken);
             setLoading(false);
             return;
           }
         } catch (err) {
-          console.warn('Token validation failed, falling back to default admin demo login');
+          console.warn('Existing session token expired or invalid. Cleared.');
+          localStorage.removeItem('brightloop_token');
+          setToken(null);
+          setUser(null);
         }
       }
-
-      // Auto-login as default ADMIN for hackathon presentation convenience
-      try {
-        const res = await authService.login({
-          email: 'admin@brightloop.io',
-          password: 'Brightloop@2025'
-        });
-        if (res.data.success) {
-          localStorage.setItem('brightloop_token', res.data.token);
-          setToken(res.data.token);
-          setUser(res.data.user);
-        }
-      } catch (err) {
-        console.error('Demo auto-login failed:', err);
-      } finally {
-        setLoading(false);
-      }
+      setLoading(false);
     };
 
     initAuth();
   }, []);
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = async (email: string, password: string): Promise<{ success: boolean; user?: User; message?: string }> => {
     try {
       const res = await authService.login({ email, password });
-      if (res.data.success) {
+      if (res.data.success && res.data.user) {
         localStorage.setItem('brightloop_token', res.data.token);
         setToken(res.data.token);
         setUser(res.data.user);
-        return true;
+        return { success: true, user: res.data.user };
       }
-      return false;
-    } catch (err) {
+      return { success: false, message: res.data.message || 'Invalid credentials' };
+    } catch (err: any) {
       console.error('Login error:', err);
-      return false;
+      const msg = err.response?.data?.message || err.message || 'Authentication service unreachable.';
+      return { success: false, message: msg };
     }
   };
 
@@ -80,7 +69,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const res = await authService.register({ name, email, password, role });
       if (res.data.success) {
-        return await login(email, password);
+        const logRes = await login(email, password);
+        return logRes.success;
       }
       return false;
     } catch (err) {

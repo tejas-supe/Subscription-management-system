@@ -34,24 +34,29 @@ export const Analytics: React.FC = () => {
   const [mrrTrend, setMrrTrend] = useState<any[]>([]);
   const [planDistribution, setPlanDistribution] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+
+  const load = async () => {
+    try {
+      setLoading(true);
+      setLoadError('');
+      const [kRes, tRes, pRes] = await Promise.all([
+        analyticsService.getKpis(),
+        analyticsService.getMrrTrend(),
+        analyticsService.getPlanDistribution()
+      ]);
+      if (kRes.data.success) setKpis(kRes.data);
+      if (tRes.data.success) setMrrTrend(tRes.data.trend);
+      if (pRes.data.success) setPlanDistribution(pRes.data.distribution);
+    } catch (err: any) {
+      console.error(err);
+      setLoadError(err.response?.data?.message || err.message || 'Unable to connect to analytics service.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const load = async () => {
-      try {
-        const [kRes, tRes, pRes] = await Promise.all([
-          analyticsService.getKpis(),
-          analyticsService.getMrrTrend(),
-          analyticsService.getPlanDistribution()
-        ]);
-        if (kRes.data.success) setKpis(kRes.data);
-        if (tRes.data.success) setMrrTrend(tRes.data.trend);
-        if (pRes.data.success) setPlanDistribution(pRes.data.distribution);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
     load();
   }, []);
 
@@ -59,6 +64,18 @@ export const Analytics: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {loadError && (
+        <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-xs flex items-center justify-between gap-3">
+          <span>{loadError}</span>
+          <button
+            onClick={load}
+            className="px-3 py-1 bg-white border border-rose-300 rounded-md font-semibold hover:bg-rose-100 text-rose-900 transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-bordergrey">
         <div>
           <h2 className="text-xl font-bold text-obsidian tracking-tight">Revenue Analytics & Financial Modeling</h2>

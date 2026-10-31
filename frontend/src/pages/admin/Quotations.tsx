@@ -86,8 +86,9 @@ export const Quotations: React.FC = () => {
           }]);
         }
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      setError(err.response?.data?.message || err.message || 'Unable to load quotations. Check backend service.');
     } finally {
       setLoading(false);
     }
@@ -254,6 +255,13 @@ export const Quotations: React.FC = () => {
         <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center justify-between">
           <span>{message}</span>
           <button onClick={() => setMessage('')} className="text-emerald-900 font-bold">✕</button>
+        </div>
+      )}
+
+      {error && (
+        <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold flex items-center justify-between">
+          <span>{error}</span>
+          <button onClick={() => { setError(''); loadData(); }} className="text-rose-900 font-bold underline ml-2">Retry</button>
         </div>
       )}
 

@@ -24,17 +24,22 @@ export const MyPayments: React.FC = () => {
   const [search, setSearch] = useState('');
   const [selectedPayment, setSelectedPayment] = useState<any>(null);
   const [receiptModalOpen, setReceiptModalOpen] = useState(false);
+  const [error, setError] = useState('');
 
   const loadData = async () => {
     try {
       setLoading(true);
+      setError('');
       const res = await portalService.getDashboard();
       if (res.data.success) {
         setPayments(res.data.payments || []);
         setCustomer(res.data.customer || null);
+      } else {
+        setError(res.data.message || 'Unable to fetch settlement receipts.');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      setError(err.response?.data?.message || err.message || 'Failed to load payments ledger. Check backend connection.');
     } finally {
       setLoading(false);
     }
@@ -62,6 +67,22 @@ export const MyPayments: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Error Banner */}
+      {error && (
+        <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-xs flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+            <span>{error}</span>
+          </div>
+          <button
+            onClick={loadData}
+            className="px-3 py-1 bg-white border border-rose-300 rounded-md font-semibold hover:bg-rose-100 text-rose-900 transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>

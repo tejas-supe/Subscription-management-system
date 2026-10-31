@@ -12,6 +12,7 @@ import { useNavigate } from 'react-router-dom';
 
 export const DashboardLayout: React.FC = () => {
   const [searchOpen, setSearchOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<{ customers: any[]; invoices: any[] }>({ customers: [], invoices: [] });
   const navigate = useNavigate();
@@ -38,12 +39,15 @@ export const DashboardLayout: React.FC = () => {
   return (
     <div className="flex min-h-screen bg-ivory text-obsidian font-sans antialiased selection:bg-chartreuse selection:text-obsidian">
       {/* Sidebar Navigation */}
-      <Sidebar />
+      <Sidebar mobileOpen={mobileMenuOpen} onCloseMobile={() => setMobileMenuOpen(false)} />
 
       {/* Main Workspace */}
       <div className="flex-1 flex flex-col min-w-0">
-        <Navbar onOpenSearch={() => setSearchOpen(true)} />
-        <main className="flex-1 p-6 md:p-8 max-w-7xl w-full mx-auto">
+        <Navbar
+          onOpenSearch={() => setSearchOpen(true)}
+          onToggleMobileMenu={() => setMobileMenuOpen(!mobileMenuOpen)}
+        />
+        <main className="flex-1 p-4 md:p-8 max-w-7xl w-full mx-auto">
           <Outlet />
         </main>
       </div>
