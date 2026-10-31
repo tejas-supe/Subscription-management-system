@@ -1,11 +1,16 @@
-import "./styles/globals.css";
+import React from 'react';
+import { BrowserRouter } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
+import { AppRoutes } from './routes/AppRoutes';
 
-export default function App() {
+export const App: React.FC = () => {
   return (
-    <main>
-      <img src="/logo.svg" alt="" width="48" height="48" />
-      <h1>Brightloop</h1>
-      <p>Subscription management workspace</p>
-    </main>
+    <BrowserRouter>
+      <AuthProvider>
+        <AppRoutes />
+      </AuthProvider>
+    </BrowserRouter>
   );
-}
+};
+
+export default App;
